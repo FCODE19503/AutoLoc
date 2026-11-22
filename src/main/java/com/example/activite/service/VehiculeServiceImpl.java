@@ -8,6 +8,24 @@ import java.util.List;
 @Service @RequiredArgsConstructor
 public class VehiculeServiceImpl implements IVehiculeService {
     private final IVehiculeRepository vehiculeRepository;
+    private final com.example.activite.repository.IContratRepository contratRepository;
+    private final com.example.activite.repository.IMaintenanceRepository maintenanceRepository;
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public List<com.example.activite.web.dto.VehiculeRechercheResponse> findVehiculesByContrat(Long contratId) {
+        if (!contratRepository.existsById(contratId)) throw new ResourceNotFoundException("Contrat", contratId);
+        return vehiculeRepository.findDistinctByReservations_Contrat_IdContrat(contratId).stream()
+                .map(com.example.activite.web.dto.VehiculeRechercheResponse::from).toList();
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public List<com.example.activite.web.dto.VehiculeRechercheResponse> findVehiculesByMaintenance(Long maintenanceId) {
+        if (!maintenanceRepository.existsById(maintenanceId)) throw new ResourceNotFoundException("Maintenance", maintenanceId);
+        return vehiculeRepository.findDistinctByMaintenances_IdMaintenance(maintenanceId).stream()
+                .map(com.example.activite.web.dto.VehiculeRechercheResponse::from).toList();
+    }
     public Vehicule create(Vehicule v) { if(v.getIdVehicule()!=null) throw new IllegalArgumentException("Un nouveau véhicule ne doit pas avoir d'identifiant."); validate(v); return vehiculeRepository.save(v); }
     public Vehicule findById(Long id) { return vehiculeRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Véhicule",id)); }
     public List<Vehicule> findAll() { return vehiculeRepository.findAll(); }

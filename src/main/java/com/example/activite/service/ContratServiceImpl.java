@@ -8,6 +8,15 @@ import java.util.List;
 @Service @RequiredArgsConstructor
 public class ContratServiceImpl implements IContratService {
     private final IContratRepository contratRepository;
+    private final com.example.activite.repository.IVehiculeRepository vehiculeRepository;
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public List<com.example.activite.web.dto.ContratRechercheResponse> findContratsByVehicule(Long vehiculeId) {
+        if (!vehiculeRepository.existsById(vehiculeId)) throw new ResourceNotFoundException("Véhicule", vehiculeId);
+        return contratRepository.findByReservation_Vehicule_IdVehicule(vehiculeId).stream()
+                .map(com.example.activite.web.dto.ContratRechercheResponse::from).toList();
+    }
     public Contrat create(Contrat c) { if(c.getIdContrat()!=null) throw new IllegalArgumentException("Un nouveau contrat ne doit pas avoir d'identifiant."); validate(c); return contratRepository.save(c); }
     public Contrat findById(Long id) { return contratRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Contrat",id)); }
     public List<Contrat> findAll() { return contratRepository.findAll(); }

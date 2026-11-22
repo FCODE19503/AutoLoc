@@ -8,6 +8,15 @@ import java.util.List;
 @Service @RequiredArgsConstructor
 public class MaintenanceServiceImpl implements IMaintenanceService {
     private final IMaintenanceRepository maintenanceRepository;
+    private final com.example.activite.repository.IVehiculeRepository vehiculeRepository;
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public List<com.example.activite.web.dto.MaintenanceRechercheResponse> findMaintenancesByVehicule(Long vehiculeId) {
+        if (!vehiculeRepository.existsById(vehiculeId)) throw new ResourceNotFoundException("Véhicule", vehiculeId);
+        return maintenanceRepository.findByVehicule_IdVehicule(vehiculeId).stream()
+                .map(com.example.activite.web.dto.MaintenanceRechercheResponse::from).toList();
+    }
     public Maintenance create(Maintenance m) { if(m.getIdMaintenance()!=null) throw new IllegalArgumentException("Une nouvelle maintenance ne doit pas avoir d'identifiant."); validate(m); return maintenanceRepository.save(m); }
     public Maintenance findById(Long id) { return maintenanceRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Maintenance",id)); }
     public List<Maintenance> findAll() { return maintenanceRepository.findAll(); }
