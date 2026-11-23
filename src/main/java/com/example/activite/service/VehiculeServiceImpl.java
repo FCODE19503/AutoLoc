@@ -23,7 +23,7 @@ public class VehiculeServiceImpl implements IVehiculeService {
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<com.example.activite.web.dto.VehiculeRechercheResponse> findVehiculesByMaintenance(Long maintenanceId) {
         if (!maintenanceRepository.existsById(maintenanceId)) throw new ResourceNotFoundException("Maintenance", maintenanceId);
-        return vehiculeRepository.findDistinctByMaintenances_IdMaintenance(maintenanceId).stream()
+        return vehiculeRepository.findVehiculesByMaintenanceJPQL(maintenanceId).stream()
                 .map(com.example.activite.web.dto.VehiculeRechercheResponse::from).toList();
     }
     public Vehicule create(Vehicule v) { if(v.getIdVehicule()!=null) throw new IllegalArgumentException("Un nouveau véhicule ne doit pas avoir d'identifiant."); validate(v); return vehiculeRepository.save(v); }

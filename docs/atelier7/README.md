@@ -2,16 +2,32 @@
 
 ## Repositories et relations traversées
 
-Les quatre méthodes suivantes sont des requêtes dérivées : Spring Data analyse leur nom au démarrage et construit la requête SQL. Aucun `@Query` supplémentaire, aucun filtrage en mémoire et aucune modification des cardinalités n'ont été nécessaires.
+Les trois premières méthodes sont des requêtes dérivées KeyWords : Spring Data analyse leur nom au démarrage et construit la requête SQL. La quatrième, véhicules par ID maintenance, utilise désormais une requête JPQL explicite avec `@Query`. Aucun filtrage en mémoire ni changement de cardinalité n'est nécessaire.
 
 | Repository | Signature | Chemin JPA |
 |---|---|---|
 | `IVehiculeRepository` | `List<Vehicule> findDistinctByReservations_Contrat_IdContrat(Long contratId)` | Vehicule.reservations → Reservation.contrat → Contrat.idContrat |
 | `IContratRepository` | `List<Contrat> findByReservation_Vehicule_IdVehicule(Long vehiculeId)` | Contrat.reservation → Reservation.vehicule → Vehicule.idVehicule |
 | `IMaintenanceRepository` | `List<Maintenance> findByVehicule_IdVehicule(Long vehiculeId)` | Maintenance.vehicule → Vehicule.idVehicule |
-| `IVehiculeRepository` | `List<Vehicule> findDistinctByMaintenances_IdMaintenance(Long maintenanceId)` | Vehicule.maintenances → Maintenance.idMaintenance |
+| `IVehiculeRepository` | `List<Vehicule> findVehiculesByMaintenanceJPQL(@Param("maintenanceId") Long maintenanceId)` | JPQL : Vehicule.maintenances → Maintenance.idMaintenance |
 
 `findBy` exprime la recherche, `_` sépare explicitement les propriétés traversées et `Distinct` évite des véhicules répétés lors des jointures. La requête native de verrou de l'Atelier 6 est conservée séparément et n'intervient pas dans ces recherches.
+
+La quatrième méthode utilise les entités et propriétés Java dans la requête JPQL suivante, et non les noms des tables SQL :
+
+```java
+@Query("""
+    SELECT DISTINCT v
+    FROM Vehicule v
+    JOIN v.maintenances m
+    WHERE m.idMaintenance = :maintenanceId
+    """)
+List<Vehicule> findVehiculesByMaintenanceJPQL(@Param("maintenanceId") Long maintenanceId);
+```
+
+`VehiculeServiceImpl.findVehiculesByMaintenance` appelle cette méthode tout en conservant le contrôle d'existence, les DTO, les validations et la route `GET /api/maintenances/{maintenanceId}/vehicules`.
+
+Vérification de cette adaptation JPQL le 23 novembre 2026 : `mvnw.cmd clean test` réussit (un test, zéro erreur), puis Spring Boot démarre. `GET /api/maintenances/1/vehicules` retourne HTTP 200 avec le véhicule 6 ; les identifiants `0`, `-1` et `abc` donnent 400, `999999` donne 404 et la maintenance 2 sans véhicule donne `200 []`. Vérifications en lecture seule avec les modifications de schéma désactivées ; aucune donnée existante modifiée.
 
 ## Services, DTO et validation
 
